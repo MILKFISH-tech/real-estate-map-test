@@ -1,0 +1,7 @@
+{
+  "name": "Real Estate Map Explorer",
+  "description": "A high-performance real estate database visualizer with automatic geocoding via Google Apps Script and branch-specific color-coded markers.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

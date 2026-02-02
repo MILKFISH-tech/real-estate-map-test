@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>三灜地產 · 數位成交地圖</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#ffffff">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #root { width: 100vw; height: 100vh; }
+        
+        .leaflet-container { background: #e5e7eb !important; }
+        
+        /* 標記點：專業簡潔風格 */
+        .marker-circle {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          border: 3px solid white;
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .marker-inner { width: 14px; height: 14px; border-radius: 50%; }
+
+        /* 聚合點：高級深灰色系 */
+        .cluster-inner {
+          width: 44px;
+          height: 44px;
+          background: #1e293b;
+          color: white;
+          border: 3px solid white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 900;
+          font-size: 14px;
+          box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+        }
+
+        /* 我的位置藍點 */
+        .user-location-dot {
+          width: 14px;
+          height: 14px;
+          background: #3b82f6;
+          border: 3px solid white;
+          border-radius: 50%;
+          box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+          animation: pulse 2.5s infinite;
+        }
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+          70% { box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        /* 隱藏預設彈窗陰影 */
+        .leaflet-popup-content-wrapper {
+          border-radius: 20px;
+          box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+          padding: 0;
+          border: 1px solid rgba(0,0,0,0.05);
+        }
+        .leaflet-popup-content { margin: 0 !important; }
+        .leaflet-bar { border: none !important; box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important; }
+        .leaflet-bar a { border-bottom: 1px solid #f1f5f9 !important; border-radius: 12px !important; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 0px; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="overflow-hidden">
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

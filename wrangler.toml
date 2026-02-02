@@ -1,0 +1,6 @@
+name = "real-estate-map-explorer"
+compatibility_date = "2024-01-01"
+account_id = "B307F22959FE676C09CBAC1C9DE60F70"
+
+[site]
+bucket = "./dist"

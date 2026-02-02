@@ -1,0 +1,24 @@
+========================================
+  Cloudflare Pages 快速部署指南
+========================================
+
+方法 1: 使用命令行（推荐）
+---------------------------
+1. 双击运行：完整部署.bat
+   或
+   运行：npm run deploy
+
+方法 2: 使用 Cloudflare 网页界面（最简单）
+------------------------------------------
+1. 打开：https://dash.cloudflare.com
+2. 点击左侧 "工人與侍從" (Workers & Pages)
+3. 点击 "建立應用程式" (Create Application)
+4. 选择 "Pages" → "直接上傳" (Direct Upload)
+5. 项目名称：real-estate-map-explorer
+6. 先运行构建：npm run build
+7. 将 dist 文件夹拖拽上传
+
+如果命令行部署失败，请检查：
+- 是否已登录：npx wrangler login
+- 网络连接是否正常
+- 项目名称是否已存在（如果存在，换个名字）
