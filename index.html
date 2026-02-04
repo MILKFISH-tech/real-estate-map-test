@@ -8,8 +8,23 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#0f172a">
     
+    <!-- 預連接加速 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://esm.sh">
+    <link rel="preconnect" href="https://a.basemaps.cartocdn.com">
+    <link rel="preconnect" href="https://b.basemaps.cartocdn.com">
+    <link rel="preconnect" href="https://c.basemaps.cartocdn.com">
+    <link rel="dns-prefetch" href="https://script.google.com">
+    
+    <!-- 字體 - 非阻塞載入 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap"></noscript>
+    
+    <!-- 關鍵資源 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -18,92 +33,117 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        :root {
+          --bg-warm: #ffffff;
+          --bg-cream: #f8fafc;
+          --text-ink: #1e293b;
+          --text-muted: #64748b;
+          --accent-primary: #2563eb;
+          --accent-rust: #dc2626;
+          --accent-gold: #3b82f6;
+          --border-soft: rgba(100, 116, 139, 0.12);
+        }
         
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #f8fafc;
+            background-color: var(--bg-warm);
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            color: var(--text-ink);
         }
 
         #root { width: 100vw; height: 100vh; }
         
-        .leaflet-container { background: #e5e7eb !important; }
+        .leaflet-container { background: #e2e8f0 !important; }
         
-        /* 標記點：專業簡潔風格 */
-        .marker-circle {
-          width: 32px;
-          height: 32px;
+        /* 單一標記點：深藍色 */
+        .marker-dot {
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
-          border: 3px solid white;
-          background: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          background: #1e3a5f;
+          border: 2px solid white;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+          box-shadow: 0 2px 6px rgba(30, 58, 95, 0.35);
         }
-        .marker-inner { width: 14px; height: 14px; border-radius: 50%; }
+        .marker-dot:hover {
+          transform: scale(1.2);
+        }
 
-        /* 聚合點：高級深灰色系 */
+        /* 聚合點：半透明深藍 + 動態大小 */
         .cluster-inner {
-          width: 44px;
-          height: 44px;
-          background: #1e293b;
-          color: white;
-          border: 3px solid white;
+          background: rgba(30, 58, 95, 0.08);
+          color: #1e3a5f;
+          border: 1.5px solid rgba(30, 58, 95, 0.35);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-weight: 900;
+          font-weight: 600;
           font-size: 14px;
-          box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+          font-family: 'Noto Sans TC', sans-serif;
+          box-shadow: 0 2px 8px rgba(30, 58, 95, 0.1);
         }
 
-        /* 我的位置藍點 */
+        /* 我的位置 */
         .user-location-dot {
           width: 14px;
           height: 14px;
           background: #3b82f6;
           border: 3px solid white;
           border-radius: 50%;
-          box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-          animation: pulse 2.5s infinite;
+          box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+          animation: pulse 2.5s ease-in-out infinite;
         }
         @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-          70% { box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+          50% { box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
         }
 
-        /* 隱藏預設彈窗陰影 */
+        /* 彈窗：淺色風格 */
         .leaflet-popup-content-wrapper {
-          border-radius: 20px;
-          box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+          border-radius: 14px;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
           padding: 0;
-          border: 1px solid rgba(0,0,0,0.05);
+          border: 1px solid rgba(0, 0, 0, 0.05);
+          background: white;
         }
         .leaflet-popup-content { margin: 0 !important; }
-        .leaflet-bar { border: none !important; box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important; }
-        .leaflet-bar a { border-bottom: 1px solid #f1f5f9 !important; border-radius: 12px !important; }
+        .leaflet-popup-tip { background: white !important; }
+        .leaflet-bar { border: none !important; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1) !important; border-radius: 10px !important; overflow: hidden; }
+        .leaflet-bar a { 
+          border-bottom: 1px solid #f1f5f9 !important; 
+          border-radius: 0 !important;
+          color: #1e293b !important;
+          background: white !important;
+        }
+        .leaflet-bar a:hover { background: #f8fafc !important; }
 
-        .custom-scrollbar::-webkit-scrollbar { width: 0px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 2px; }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.3s ease-out forwards; }
+        
+        /* 滑順縮放動畫 */
+        .leaflet-zoom-anim .leaflet-zoom-animated {
+          will-change: transform;
+        }
+        .leaflet-fade-anim .leaflet-popup {
+          transition: opacity 0.15s linear;
+        }
+        .leaflet-marker-icon {
+          will-change: transform;
+        }
+        
+        /* 硬體加速 */
+        .leaflet-tile-container {
+          will-change: transform;
+        }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body class="overflow-hidden">
     <div id="root"></div>

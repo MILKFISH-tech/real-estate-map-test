@@ -16,14 +16,14 @@ function doGet(e) {
 
     for (var i = 1; i < data.length; i++) {
       var row = data[i];
-      // A:日期(0), B:案名(1), C:地址(2), D:緯度(3), E:經度(4), F:顯示地址(5), G:售價(6), H:分店(7)
+      // A:成交日期(0), B:案名(1), C:地址(2), D:緯度(3), E:經度(4), F:成交價萬(5), G:分店(6)
       var date = formatDate(row[0]);
       var name = String(row[1] || "未命名案件");
       var addr = String(row[2] || ""); 
       var lat = row[3];              
       var lng = row[4];              
-      var price = String(row[6] || "面議");
-      var branch = String(row[7] || "總店");
+      var price = String(row[5] || "面議");
+      var branch = String(row[6] || "三灜地產");
 
       // ✨ 自動定位邏輯
       if (addr && (!lat || !lng)) {
@@ -49,7 +49,7 @@ function doGet(e) {
           address: addr,
           lat: parseFloat(lat),
           lng: parseFloat(lng),
-          displayAddress: String(row[5] || addr),
+          displayAddress: addr,
           price: price,
           branch: branch
         });
@@ -60,7 +60,9 @@ function doGet(e) {
     return createJsonResponse(output);
 
   } catch (err) {
-    return createJsonResponse({ error: err.message });
+    // 錯誤時返回空陣列，避免前端解析失敗
+    console.error("API 錯誤: " + err.message);
+    return createJsonResponse([]);
   }
 }
 

@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Property } from './types';
 import MapView from './components/MapView';
 import PropertySidebar from './components/PropertySidebar';
-import { Search, ChevronRight, Menu, RefreshCw, Loader2, Database, MapPin, X, Lock, ExternalLink, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Menu, RefreshCw, Database, X, AlertCircle } from 'lucide-react';
 
-const DATA_URL = "https://script.google.com/macros/s/AKfycbwqk2jxTzwWi7f0ufV5GBedb0lX72XH4eMYvXjp2rw64ofk_Yu1LUPKUdJT5tLpBem7HQ/exec";
+const DATA_URL = "https://script.google.com/macros/s/AKfycbxxBnk13H6jAAQtVve-NMncirCIWnWWHOKFfszrO4gZAaIDm3xf3fsbAnEPGupzzfubzw/exec";
 const CORRECT_PASSWORD = "8888"; 
 
 const App: React.FC = () => {
@@ -13,7 +13,6 @@ const App: React.FC = () => {
   const [passwordInput, setPasswordInput] = useState('');
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [showSidebar, setShowSidebar] = useState(window.innerWidth > 768);
   const [error, setError] = useState<string | null>(null);
@@ -22,12 +21,22 @@ const App: React.FC = () => {
     if (!isAuthenticated) return;
     setLoading(true);
     setError(null);
+    
+    // 設置超時控制器
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    
     try {
-      const response = await fetch(`${DATA_URL}?t=${Date.now()}`);
+      const response = await fetch(`${DATA_URL}?t=${Date.now()}`, {
+        signal: controller.signal,
+        cache: 'no-cache'
+      });
+      clearTimeout(timeoutId);
+      
       const text = await response.text();
       
       if (text.startsWith('<!DOCTYPE')) {
-        setError("權限錯誤：請確認 GAS 部署設定為「所有人」存取。");
+        setError("權限錯誤");
         return;
       }
       
@@ -37,8 +46,12 @@ const App: React.FC = () => {
       } else {
         setError("資料格式異常");
       }
-    } catch (err) {
-      setError("連線失敗：請檢查後台網址");
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        setError("連線超時");
+      } else {
+        setError("連線失敗");
+      }
     } finally {
       setLoading(false);
     }
@@ -46,70 +59,82 @@ const App: React.FC = () => {
 
   useEffect(() => { if (isAuthenticated) fetchData(); }, [fetchData, isAuthenticated]);
 
-  const filteredProperties = useMemo(() => {
-    return properties.filter(p => 
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.branch.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.displayAddress.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm, properties]);
 
   if (!isAuthenticated) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[#0f172a] p-6 relative overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-600/10 blur-[150px] rounded-full"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-slate-400/5 blur-[120px] rounded-full"></div>
+        {/* 背景光暈 */}
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[120px] rounded-full"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-400/5 blur-[100px] rounded-full"></div>
         
-        <div className="w-full max-w-sm bg-white/5 backdrop-blur-2xl p-10 rounded-[3rem] border border-white/10 shadow-2xl text-center relative z-10 animate-fade">
-          <div className="w-20 h-20 bg-gradient-to-br from-slate-700 to-slate-900 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-2xl border border-white/10">
-            <Lock className="text-white/80" size={32} />
+        <div className="w-full max-w-sm p-10 text-center relative z-10 animate-fade">
+          {/* LOGO */}
+          <div className="mb-10">
+            <div className="w-16 h-16 mx-auto mb-6 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-900/50">
+              <div className="w-5 h-5 bg-white rounded"></div>
+            </div>
+            <h1 className="text-2xl text-white mb-2 font-bold tracking-wide">三灜地產</h1>
+            <p className="text-slate-500 text-sm">成交紀錄系統</p>
           </div>
-          <h1 className="text-2xl font-black text-white mb-2 tracking-tight">三灜地產系統</h1>
-          <p className="text-slate-500 font-bold text-[10px] mb-10 tracking-[0.4em] uppercase opacity-60">Internal Database Access</p>
           
           <form onSubmit={(e) => {
             e.preventDefault();
             if (passwordInput === CORRECT_PASSWORD) {
               setIsAuthenticated(true);
               sessionStorage.setItem('sy_auth', 'true');
-            } else { alert("通行碼錯誤"); }
+            } else { alert("通行碼有誤，請再試一次"); }
           }} className="space-y-4">
             <input
               autoFocus
               type="password"
-              placeholder="••••"
+              placeholder="請輸入通行碼"
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
-              className="w-full h-16 bg-white/5 border border-white/10 rounded-2xl px-4 text-center text-3xl font-mono text-white outline-none focus:border-white/30 transition-all placeholder:text-slate-800"
+              className="w-full h-12 bg-[#1e293b] border border-slate-700 rounded-xl px-4 text-center text-lg text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
             />
-            <button type="submit" className="w-full h-16 bg-white text-slate-900 font-black text-md rounded-2xl active:scale-95 transition-all shadow-xl">進入系統</button>
+            <button type="submit" className="w-full h-12 bg-blue-600 text-white font-bold rounded-xl active:scale-[0.98] transition-all hover:bg-blue-500 shadow-lg shadow-blue-900/50">
+              進入系統
+            </button>
           </form>
+          
+          <p className="mt-10 text-xs text-slate-600">僅供內部人員使用</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#f8fafc] overflow-hidden relative font-sans animate-fade">
-      {/* 專業灰色系頂欄 */}
-      <header className="h-16 bg-white border-b border-slate-200/60 flex items-center justify-between px-6 z-[2000] sticky top-0 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
-             <div className="w-3 h-3 bg-white rounded-sm rotate-45"></div>
+    <div className="flex flex-col h-screen w-full bg-slate-50 overflow-hidden relative animate-fade">
+      {/* Loading 覆蓋層 */}
+      {loading && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-[3000] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <RefreshCw size={32} className="text-blue-600 animate-spin" />
+            <span className="text-slate-600 text-sm">載入資料中...</span>
           </div>
-          <span className="font-black text-slate-900 text-lg tracking-tight">三灜地產成交地圖</span>
+        </div>
+      )}
+
+      {/* 頂欄 - 深藍色 */}
+      <header className="h-14 bg-[#0f172a] flex items-center justify-between px-5 z-[2000] sticky top-0 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-3 h-3 bg-white rounded-sm"></div>
+          </div>
+          <span className="text-white text-base font-bold">三灜地產</span>
+          <span className="hidden sm:block text-slate-400 text-sm">成交地圖</span>
         </div>
 
         <div className="flex items-center gap-2">
           {error && (
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-xs font-bold border border-red-100 animate-pulse">
-              <AlertCircle size={14} /> {error}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-red-500/20 text-red-400 rounded-full text-xs font-medium border border-red-500/30">
+              <AlertCircle size={13} /> {error}
             </div>
           )}
-          <button onClick={() => fetchData()} className="p-2.5 text-slate-400 hover:text-slate-900 transition-colors">
+          <button onClick={() => fetchData()} className="p-2 text-slate-400 hover:text-blue-400 transition-colors">
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
-          <button onClick={() => setShowSidebar(!showSidebar)} className="md:hidden p-2.5 bg-slate-900 text-white rounded-xl">
+          <button onClick={() => setShowSidebar(!showSidebar)} className="md:hidden p-2 bg-blue-600 text-white rounded-lg">
              {showSidebar ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
@@ -119,66 +144,65 @@ const App: React.FC = () => {
         {/* 地圖區域 */}
         <div className="flex-1 h-full relative">
           <MapView 
-            properties={filteredProperties} 
+            properties={properties} 
             selectedProperty={selectedProperty}
             onMarkerClick={(p) => {
               setSelectedProperty(p);
-              if (window.innerWidth < 768) setShowSidebar(true);
             }}
             sidebarOpen={showSidebar}
           />
 
-          {/* 移動端搜尋框 */}
-          <div className="absolute top-4 left-4 right-4 z-[1001] md:left-6 md:top-6 md:w-80">
-            <div className="relative shadow-2xl">
-              <input 
-                type="text" 
-                placeholder="搜尋物件..."
-                className="w-full h-12 pl-12 pr-4 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-slate-900/5 transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            </div>
-          </div>
-
-          {/* 如果有錯誤，在下方顯示小提示框，不遮擋地圖 */}
+          {/* 錯誤提示 */}
           {error && (
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1001] md:hidden">
-              <div className="bg-red-600 text-white px-4 py-2 rounded-full text-[10px] font-black shadow-xl flex items-center gap-2">
-                <AlertCircle size={14} /> 後台連線異常
+              <div className="bg-red-600 text-white px-4 py-2 rounded-full text-xs font-medium shadow-lg flex items-center gap-2">
+                <AlertCircle size={13} /> 連線異常
               </div>
             </div>
           )}
+
+          {/* 打開側邊欄按鈕 */}
+          {!showSidebar && (
+            <button 
+              onClick={() => setShowSidebar(true)} 
+              className="absolute bottom-6 right-6 z-[1001] w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-blue-700 transition-all active:scale-95"
+            >
+              <Database size={22} />
+            </button>
+          )}
         </div>
 
-        {/* 專業側邊欄 - 列表風格 */}
+        {/* 側邊欄 - 淺色毛玻璃 */}
         <aside className={`
-          absolute md:relative inset-y-0 right-0 z-[2001] md:z-10
-          w-full sm:w-[380px] bg-white border-l border-slate-200 flex flex-col
-          transition-transform duration-500 ease-in-out
-          ${showSidebar ? 'translate-x-0' : 'translate-x-full md:absolute md:right-[-380px]'}
+          absolute inset-y-0 right-0 z-[2001]
+          w-full sm:w-[360px] bg-white/80 backdrop-blur-xl border-l border-white/50 flex flex-col shadow-2xl
+          transition-transform duration-300 ease-out
+          ${showSidebar ? 'translate-x-0' : 'translate-x-full'}
         `}>
-          <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-              <Database size={16} className="text-slate-400" /> 物件列表 ({filteredProperties.length})
-            </h2>
-            <button onClick={() => setShowSidebar(false)} className="p-1 text-slate-300 hover:text-slate-900"><X size={20}/></button>
+          <div className="px-5 py-4 border-b border-slate-200/50 flex items-center justify-between bg-white/50">
+            <div className="flex items-center gap-2">
+              <Database size={16} className="text-blue-600" />
+              <h2 className="text-sm text-slate-800 font-bold">
+                物件列表
+              </h2>
+              <span className="text-slate-400 text-xs">({properties.length})</span>
+            </div>
+            <button onClick={() => setShowSidebar(false)} className="p-1 text-slate-400 hover:text-slate-800 transition-colors"><X size={20}/></button>
           </div>
 
           {selectedProperty && (
-            <div className="p-6 bg-slate-50/50 border-b border-slate-100 animate-fade">
-              <div className="text-[10px] font-black text-slate-400 uppercase mb-2">{selectedProperty.branch} · {selectedProperty.date}</div>
-              <h3 className="text-xl font-black text-slate-900 mb-1 leading-tight">{selectedProperty.name}</h3>
-              <div className="text-2xl font-black text-red-500 mb-4">{selectedProperty.price}</div>
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                <MapPin size={14} /> {selectedProperty.displayAddress}
+            <div className="px-4 py-3 bg-blue-50/80 border-b border-slate-200/50 animate-fade">
+              <div className="text-[10px] text-slate-500 font-medium mb-1">三灜地產</div>
+              <h3 className="text-base text-slate-800 font-bold mb-1 leading-tight">{selectedProperty.name}</h3>
+              <div className="text-lg text-orange-500 font-bold mb-2">成交價：{selectedProperty.price}萬</div>
+              <div className="text-[10px] text-slate-400">
+                成交分店：{selectedProperty.branch} · 成交時間：{selectedProperty.date}
               </div>
             </div>
           )}
 
           <PropertySidebar 
-            properties={filteredProperties} 
+            properties={properties} 
             selectedProperty={selectedProperty} 
             onSelect={setSelectedProperty} 
           />
