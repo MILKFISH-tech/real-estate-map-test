@@ -57,7 +57,7 @@
         
         .leaflet-container { background: #e2e8f0 !important; }
         
-        /* 單一標記點：深藍色 */
+        /* 單一標記點：實心深藍色 */
         .marker-dot {
           width: 18px;
           height: 18px;
@@ -65,8 +65,8 @@
           background: #1e3a5f;
           border: 2px solid white;
           cursor: pointer;
-          transition: transform 0.2s ease;
-          box-shadow: 0 2px 6px rgba(30, 58, 95, 0.35);
+          transition: transform 0.15s ease;
+          box-shadow: 0 2px 6px rgba(30, 58, 95, 0.5);
         }
         .marker-dot:hover {
           transform: scale(1.2);
@@ -139,9 +139,32 @@
           will-change: transform;
         }
         
-        /* 硬體加速 */
+        /* 硬體加速 + 滑順動畫 */
         .leaflet-tile-container {
           will-change: transform;
+        }
+        
+        /* 標記滑順動畫 */
+        .leaflet-marker-icon {
+          will-change: transform;
+          transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .leaflet-marker-shadow {
+          will-change: transform;
+          transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* 縮放時的滑順效果 */
+        .leaflet-zoom-anim .leaflet-zoom-animated {
+          will-change: transform;
+          transition: transform 0.25s cubic-bezier(0, 0, 0.25, 1);
+        }
+        
+        /* 平移動畫 */
+        .leaflet-pan-anim .leaflet-tile,
+        .leaflet-pan-anim .leaflet-marker-icon,
+        .leaflet-pan-anim .leaflet-marker-shadow {
+          transition: transform 0.25s ease-out;
         }
     </style>
 </head>
