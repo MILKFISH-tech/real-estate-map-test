@@ -17,6 +17,7 @@ const MapView: React.FC<MapViewProps> = ({ properties, selectedProperty, onMarke
   const clusterGroupRef = useRef<any>(null);
   const userMarkerRef = useRef<any>(null);
   const directMarkersRef = useRef<any[]>([]);
+  const markersMapRef = useRef<Map<string, any>>(new Map());
 
   // 初始化地圖（只執行一次）
   useEffect(() => {
@@ -116,6 +117,7 @@ const MapView: React.FC<MapViewProps> = ({ properties, selectedProperty, onMarke
       }
     });
     directMarkersRef.current = [];
+    markersMapRef.current.clear();
 
     // 使用聚合群組，圓圈大小根據點數量變化，關閉所有動畫
     clusterGroupRef.current = L.markerClusterGroup({
@@ -182,24 +184,44 @@ const MapView: React.FC<MapViewProps> = ({ properties, selectedProperty, onMarke
         </div>
       `;
 
-      const marker = L.marker([p.lat, p.lng], { icon })
-        .bindPopup(popupContent, {
+      const marker = L.marker([p.lat, p.lng], { icon });
+      marker._pinned = false;
+      
+      marker.bindPopup(popupContent, {
           closeButton: true,
           offset: [0, -8],
           className: 'custom-popup',
-          autoPan: true,
-          autoPanPadding: [50, 50]
+          autoPan: false,
+          autoClose: false,
+          closeOnClick: false
         })
         .on('mouseover', function() {
           this.openPopup();
         })
         .on('mouseout', function() {
-          this.closePopup();
+          const self = this;
+          // 延遲檢查，避免移動到 popup 時誤關閉
+          setTimeout(() => {
+            if (!self._pinned) {
+              self.closePopup();
+            }
+          }, 100);
         })
-        .on('click', (e: any) => {
+        .on('click', function(e: any) {
+          // 阻止事件冒泡
+          L.DomEvent.stopPropagation(e);
+          this._pinned = true;
+          this.openPopup();
           onMarkerClick(p);
+        })
+        .on('popupclose', function() {
+          this._pinned = false;
         });
 
+      // 保存標記引用，用於後續查找
+      const markerId = `${p.lat}-${p.lng}-${p.name}`;
+      markersMapRef.current.set(markerId, marker);
+      
       clusterGroupRef.current.addLayer(marker);
     });
 
@@ -217,13 +239,27 @@ const MapView: React.FC<MapViewProps> = ({ properties, selectedProperty, onMarke
   }, [properties, onMarkerClick, selectedProperty]);
 
   useEffect(() => {
-    if (selectedProperty && mapRef.current) {
-      // 使用滑順動畫飛到選中的位置
-      mapRef.current.flyTo([selectedProperty.lat, selectedProperty.lng], 17, {
+    if (selectedProperty && mapRef.current && clusterGroupRef.current) {
+      // 找到對應的標記
+      const markerId = `${selectedProperty.lat}-${selectedProperty.lng}-${selectedProperty.name}`;
+      const marker = markersMapRef.current.get(markerId);
+      
+      // 移動地圖到選中的位置
+      mapRef.current.flyTo([selectedProperty.lat, selectedProperty.lng], 16, {
         animate: true,
-        duration: 0.8,
-        easeLinearity: 0.25
+        duration: 0.6
       });
+      
+      // 在地圖移動完成後打開 popup
+      if (marker) {
+        setTimeout(() => {
+          // 確保聚合展開後能找到標記
+          clusterGroupRef.current.zoomToShowLayer(marker, () => {
+            marker._clicked = true;
+            marker.openPopup();
+          });
+        }, 650);
+      }
     }
   }, [selectedProperty]);
 
