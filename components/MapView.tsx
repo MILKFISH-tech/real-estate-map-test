@@ -29,7 +29,7 @@ const MapView: React.FC<MapViewProps> = ({ properties, selectedProperty, onMarke
       return;
     }
 
-    // 初始化地圖 - 啟用滑順動畫
+    // 初始化地圖 - 高性能滑順動畫
     mapRef.current = L.map(mapContainerRef.current, { 
       zoomControl: false,
       attributionControl: false,
@@ -37,14 +37,19 @@ const MapView: React.FC<MapViewProps> = ({ properties, selectedProperty, onMarke
       zoomAnimation: true,
       fadeAnimation: true,
       markerZoomAnimation: true,
-      zoomAnimationThreshold: 4,
+      zoomAnimationThreshold: 6,
       // Canvas 渲染提升性能
       preferCanvas: true,
       // 縮放設定 - 更流暢
-      wheelDebounceTime: 40,
-      wheelPxPerZoomLevel: 60,
-      zoomSnap: 0.5,
-      zoomDelta: 0.5
+      wheelDebounceTime: 30,
+      wheelPxPerZoomLevel: 80,
+      zoomSnap: 1,
+      zoomDelta: 1,
+      // 平移慣性
+      inertia: true,
+      inertiaDeceleration: 3000,
+      inertiaMaxSpeed: 1500,
+      easeLinearity: 0.2
     }).setView([24.18, 120.70], 12);
     
     // 使用 CartoDB Positron (淺色風格) - 加入快取設定
@@ -244,21 +249,24 @@ const MapView: React.FC<MapViewProps> = ({ properties, selectedProperty, onMarke
       const markerId = `${selectedProperty.lat}-${selectedProperty.lng}-${selectedProperty.name}`;
       const marker = markersMapRef.current.get(markerId);
       
-      // 移動地圖到選中的位置
-      mapRef.current.flyTo([selectedProperty.lat, selectedProperty.lng], 16, {
+      // 移動地圖到選中的位置（使用 setView 更流暢）
+      mapRef.current.setView([selectedProperty.lat, selectedProperty.lng], 16, {
         animate: true,
-        duration: 0.6
+        duration: 0.4,
+        easeLinearity: 0.25
       });
       
       // 在地圖移動完成後打開 popup
       if (marker) {
         setTimeout(() => {
           // 確保聚合展開後能找到標記
-          clusterGroupRef.current.zoomToShowLayer(marker, () => {
-            marker._clicked = true;
-            marker.openPopup();
-          });
-        }, 650);
+          if (clusterGroupRef.current) {
+            clusterGroupRef.current.zoomToShowLayer(marker, () => {
+              marker._pinned = true;
+              marker.openPopup();
+            });
+          }
+        }, 450);
       }
     }
   }, [selectedProperty]);
